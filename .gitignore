@@ -3,3 +3,4 @@ _site
 .tikz-cache
 content
 .DS_Store
+todo.md

@@ -288,8 +288,8 @@ function scriptTags() {
   return `\n    <link rel=\"stylesheet\" href=\"https://tikzjax.com/v1/fonts.css\" />\n    <script src=\"https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js\" defer></script>\n    <script src=\"https://tikzjax.com/v1/tikzjax.js\" defer></script>`;
 }
 
-function renderPage({ title, body, treeHtml, scripts }) {
-  const mathjaxConfig = `
+function mathjaxConfig() {
+  return `
     <script>
       window.MathJax = {
         tex: {
@@ -303,33 +303,206 @@ function renderPage({ title, body, treeHtml, scripts }) {
         }
       };
     </script>`;
-  const mermaidLoader = `
+}
+
+function mermaidLoader() {
+  return `
     <script type="module">
       import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs";
       mermaid.initialize({ startOnLoad: true });
     </script>`;
+}
+
+// Get random articles for carousel
+function getRandomArticles(mdFiles, count = 20) {
+  const articles = mdFiles
+    .filter(f => !f.endsWith("index.md"))
+    .map(file => {
+      const rel = path.relative(CONTENT_DIR, file);
+      const parts = rel.split(path.sep);
+      const filename = parts.pop();
+      const urlPath = parts.map(slugifySegment).concat(slugifyFilename(filename)).join("/");
+      const title = filename.replace(/\.md$/i, "");
+      const folder = parts.join("/") || "root";
+      return { title, url: `/${urlPath}.html`, path: folder };
+    });
+
+  // Shuffle
+  for (let i = articles.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [articles[i], articles[j]] = [articles[j], articles[i]];
+  }
+
+  return articles.slice(0, count);
+}
+
+// Build navigation menu data for top page
+function buildNavMenu(tree) {
+  const items = [];
+  for (const [name, node] of tree.children) {
+    const files = [];
+    collectFiles(node, [name], files);
+    items.push({
+      name,
+      description: `${name}のノート`,
+      files: files.slice(0, 10)
+    });
+  }
+  return items;
+}
+
+function collectFiles(node, baseParts, result) {
+  for (const file of node.files) {
+    const name = file.replace(/\.md$/i, "");
+    const url = "/" + baseParts.map(slugifySegment).concat(slugifyFilename(file)).join("/") + ".html";
+    result.push({ name, url });
+  }
+  for (const [childName, childNode] of node.children) {
+    collectFiles(childNode, baseParts.concat(childName), result);
+  }
+}
+
+// Render header
+function renderHeader(currentPath = "") {
+  const pathDisplay = currentPath ? `~/${currentPath}` : "~/";
+  return `
+  <header class="header">
+    <div class="header-left">
+      <span class="prompt">$</span>
+      <span class="path">${escapeHtml(pathDisplay)}</span>
+    </div>
+    <div class="header-right">
+      <button class="lang-toggle">EN</button>
+      <a href="/#about" class="about-link">?</a>
+    </div>
+  </header>`;
+}
+
+// Render top page
+function renderTopPage({ navMenuItems, randomArticles, scripts }) {
+  const navMenuHtml = navMenuItems.map(item => `
+    <div class="nav-menu-item">
+      <a href="#">${escapeHtml(item.name)}</a>
+      <div class="nav-submenu">
+        <div class="nav-submenu-desc">${escapeHtml(item.description)}</div>
+        <ul class="nav-submenu-list">
+          ${item.files.map(f => `<li><a href="${f.url}">${escapeHtml(f.name)}</a></li>`).join("")}
+        </ul>
+      </div>
+    </div>
+  `).join("");
+
+  const cardsHtml = randomArticles.map(article => `
+    <div class="card">
+      <a href="${article.url}">
+        <div class="card-title">${escapeHtml(article.title)}</div>
+        <div class="card-path">${escapeHtml(article.path)}</div>
+      </a>
+    </div>
+  `).join("");
+
   return `<!doctype html>
-<html lang=\"en\">
+<html lang="ja">
   <head>
-    <meta charset=\"utf-8\" />
-    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\" />
-    <title>${escapeHtml(title)}</title>
-    <link rel=\"stylesheet\" href=\"/style.css\" />${mathjaxConfig}${scripts}
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>terminal_dogma</title>
+    <link rel="stylesheet" href="/style.css" />${mathjaxConfig()}${scripts}
   </head>
   <body>
-    <div class=\"layout\">
-      <aside class=\"sidebar\">
-        <div class=\"brand\">terminal_dogma</div>
-        <nav class=\"nav\">
+    ${renderHeader()}
+
+    <main class="top-page">
+      <div class="hero">
+        <div class="nav-menu-container">
+          <div class="hamburger">
+            <span class="hamburger-line"></span>
+            <span class="hamburger-line"></span>
+            <span class="hamburger-line"></span>
+          </div>
+          <div class="nav-menu">
+            ${navMenuHtml}
+          </div>
+        </div>
+        <h1 class="hero-title">&gt; terminal_dogma</h1>
+      </div>
+
+      <div class="search-section">
+        <input type="text" class="search-bar" placeholder="search..." disabled />
+      </div>
+
+      <p class="welcome">ようこそ</p>
+
+      <section id="about" class="qa-section">
+        <h2>Q&A</h2>
+        <dl>
+          <div class="qa-item">
+            <dt>terminal_dogmaとは？</dt>
+            <dd>個人的な学習ノートや技術メモを公開しているサイトです。</dd>
+          </div>
+          <div class="qa-item">
+            <dt>どんな内容がある？</dt>
+            <dd>統計学、Python、SQL、その他プログラミング関連のノートがあります。</dd>
+          </div>
+          <div class="qa-item">
+            <dt>誰が運営している？</dt>
+            <dd>個人で運営しています。学習のアウトプットとして活用しています。</dd>
+          </div>
+        </dl>
+      </section>
+
+      <section class="recommend-section">
+        <h2>&gt; おすすめ</h2>
+        <div class="carousel-container">
+          <button class="carousel-btn carousel-prev">&lt;</button>
+          <div class="carousel">
+            <div class="carousel-track">
+              ${cardsHtml}
+            </div>
+          </div>
+          <button class="carousel-btn carousel-next">&gt;</button>
+        </div>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <p>本サイトの内容は個人の学習メモであり、正確性を保証するものではありません。</p>
+      <p>&copy; 2025 terminal_dogma</p>
+    </footer>
+
+    ${mermaidLoader()}
+    <script src="/app.js"></script>
+  </body>
+</html>`;
+}
+
+// Render content page with header
+function renderContentPage({ title, body, treeHtml, currentPath, scripts }) {
+  return `<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>${escapeHtml(title)} - terminal_dogma</title>
+    <link rel="stylesheet" href="/style.css" />${mathjaxConfig()}${scripts}
+  </head>
+  <body>
+    ${renderHeader(currentPath)}
+
+    <div class="page-layout">
+      <aside class="sidebar">
+        <a href="/" class="brand">terminal_dogma</a>
+        <nav class="nav">
           ${treeHtml}
         </nav>
       </aside>
-      <main class=\"content\">
+      <main class="content">
         ${body}
       </main>
     </div>
-    ${mermaidLoader}
-    <script src=\"/app.js\"></script>
+
+    ${mermaidLoader()}
+    <script src="/app.js"></script>
   </body>
 </html>`;
 }
@@ -344,8 +517,13 @@ function buildOnce() {
   copyPublic();
   ensureDir(TIKZ_OUT_DIR);
 
+  // Build content pages
   for (const file of mdFiles) {
     const rel = path.relative(CONTENT_DIR, file);
+
+    // Skip index.md - we handle it separately
+    if (rel === "index.md") continue;
+
     const parts = rel.split(path.sep);
     const filename = parts.pop();
     const outRel = parts.map(slugifySegment).concat(slugifyFilename(filename)).join("/") + ".html";
@@ -353,20 +531,17 @@ function buildOnce() {
     const text = fs.readFileSync(file, "utf8");
     const title = extractTitle(text, path.basename(file, ".md"));
     const body = md.render(text);
+    const currentPath = rel.replace(/\.md$/i, "").replace(/\\/g, "/");
 
     fs.mkdirSync(path.dirname(outPath), { recursive: true });
-    fs.writeFileSync(outPath, renderPage({ title, body, treeHtml, scripts }), "utf8");
+    fs.writeFileSync(outPath, renderContentPage({ title, body, treeHtml, currentPath, scripts }), "utf8");
   }
 
-  // Root index redirects to content/index.md if present
-  const indexMd = path.join(CONTENT_DIR, "index.md");
+  // Build top page
+  const navMenuItems = buildNavMenu(tree);
+  const randomArticles = getRandomArticles(mdFiles, 20);
   const indexHtml = path.join(OUT_DIR, "index.html");
-  if (!fs.existsSync(indexHtml) && fs.existsSync(indexMd)) {
-    const text = fs.readFileSync(indexMd, "utf8");
-    const title = extractTitle(text, "index");
-    const body = md.render(text);
-    fs.writeFileSync(indexHtml, renderPage({ title, body, treeHtml, scripts }), "utf8");
-  }
+  fs.writeFileSync(indexHtml, renderTopPage({ navMenuItems, randomArticles, scripts }), "utf8");
 }
 
 function watch() {
