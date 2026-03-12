@@ -431,28 +431,28 @@ function renderTopPage({ navMenuItems, randomArticles, scripts }) {
         <input type="text" class="search-bar" placeholder="search..." disabled />
       </div>
 
-      <p class="welcome">ようこそ</p>
+      <p class="welcome">例：ようこそ</p>
 
       <section id="about" class="qa-section">
         <h2>Q&A</h2>
         <dl>
           <div class="qa-item">
             <dt>terminal_dogmaとは？</dt>
-            <dd>個人的な学習ノートや技術メモを公開しているサイトです。</dd>
+            <dd>例：気軽に「自分」を発信するための、ローカルメモと公開用ブログの中間のような場所です。</dd>
           </div>
           <div class="qa-item">
             <dt>どんな内容がある？</dt>
-            <dd>統計学、Python、SQL、その他プログラミング関連のノートがあります。</dd>
+            <dd>例：普段の学習メモ、日記、読書ログなどがあります。</dd>
           </div>
           <div class="qa-item">
             <dt>誰が運営している？</dt>
-            <dd>個人で運営しています。学習のアウトプットとして活用しています。</dd>
+            <dd>例：個人で運営しています。</dd>
           </div>
         </dl>
       </section>
 
       <section class="recommend-section">
-        <h2>&gt; おすすめ</h2>
+        <h2>&gt; ランダムおすすめ</h2>
         <div class="carousel-container">
           <button class="carousel-btn carousel-prev">&lt;</button>
           <div class="carousel">
@@ -466,7 +466,7 @@ function renderTopPage({ navMenuItems, randomArticles, scripts }) {
     </main>
 
     <footer class="footer">
-      <p>本サイトの内容は個人の学習メモであり、正確性を保証するものではありません。</p>
+      <p>例：本サイトの内容は個人のメモであり、正確性を保証するものではありません。</p>
       <p>&copy; 2025 terminal_dogma</p>
     </footer>
 
